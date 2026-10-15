@@ -6,10 +6,11 @@
   "description": "Offline-first Beverage Shop POS & Inventory Management frontend",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/generate-sw.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "verify:offline": "node scripts/verify-offline.mjs"
   },
   "dependencies": {
     "lucide-react": "1.52.0",

@@ -1,7 +1,7 @@
-import { Pencil, UserPlus, UserX, Users } from "lucide-react";
+import { Pencil, Trash2, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import { roleMeta } from "../config/roles";
-import { permissionLabel } from "../config/permissions";
+import { permissionMeta } from "../config/permissions";
 import { PageHeader } from "../components/layout/PageHeader";
 import { StaffFormModal } from "../components/staff/StaffFormModal";
 import { Badge } from "../components/ui/Badge";
@@ -104,7 +104,7 @@ export default function Team() {
                         {isYou && <Badge tone="success">You</Badge>}
                       </h3>
                       <p className="truncate text-xs text-muted-foreground">
-                        @{account.username} · {account.title}
+                        {account.email || roleMeta[account.role].blurb}
                       </p>
                     </div>
                   </div>
@@ -157,12 +157,6 @@ export default function Team() {
                     )}
                   </div>
                 </div>
-
-                {account.email && (
-                  <p className="mt-3 truncate text-xs text-muted-foreground">
-                    {account.email}
-                  </p>
-                )}
               </Card>
             );
           })}

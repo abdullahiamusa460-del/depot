@@ -12,7 +12,9 @@ import {
   clearToken,
   getToken,
   setToken,
-} from "../lib/api";
+} from "../lib/data";
+import { resetSampleCatalog } from "../lib/local/seed";
+import { isRecognizableBackup } from "../lib/backup";
 import {
   categoryInputToApi,
   fromPaymentMethod,
@@ -32,6 +34,7 @@ import { buildCartItems } from "../lib/cart";
 import { uid } from "../lib/id";
 import type {
   AuthSession,
+  BackupPayload,
   BusinessSettings,
   CartLine,
   Category,
@@ -66,6 +69,7 @@ const EMPTY_SETTINGS: BusinessSettings = {
   address: "",
   phone: "",
   email: "",
+  website: "",
   currencySymbol: "$",
   currencyCode: "USD",
   invoicePrefix: "INV",
@@ -88,6 +92,10 @@ function readStoredTheme(): ThemeMode {
 function prefersDark(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function errorMessage(error: unknown): string {
@@ -164,16 +172,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshProducts = useCallback(async () => {
     const list = await api.products.all();
     setProducts(list.map(toProduct));
-  }, []);
-
-  const refreshCategories = useCallback(async () => {
-    const list = await api.categories.list();
-    setCategories(list.map(toCategory));
-  }, []);
-
-  const refreshSales = useCallback(async () => {
-    const list = await api.sales.all();
-    setSales(list.map(toSale));
   }, []);
 
   const refreshInventory = useCallback(async () => {
@@ -609,6 +607,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           paymentMethod: fromPaymentMethod(input.paymentMethod),
           customer: input.customer,
           note: input.note,
+          applyTax: input.applyTax,
         });
         const sale = toSale(dto);
         setSales((current) => [sale, ...current]);
@@ -678,11 +677,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, [notifications]);
 
-  const exportData = useCallback(async (): Promise<string> => {
+  const exportData = useCallback(async (): Promise<BackupPayload> => {
     if (!canDo("backup.manage")) {
       throw new Error("You do not have permission to export data.");
     }
-    return api.backup.export();
+    const text = await api.backup.export();
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error("The export did not produce a readable file.");
+    }
+    const record = parsed as { app?: string; data?: unknown; success?: boolean };
+    // Unwrap REST envelope or pass through
+    const candidate = isRecord(record) && isRecord(record.data) && typeof (record.data as any).app === "string"
+      ? (record.data as any)
+      : record;
+    const payload = (candidate.app ? (candidate as BackupPayload) : undefined) as BackupPayload | undefined;
+    if (!payload || typeof payload !== "object" || !payload.data) {
+      throw new Error("The export did not produce a readable file.");
+    }
+    return payload;
   }, []);
 
   const importData = useCallback(
@@ -693,15 +708,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!payload || typeof payload !== "object") {
         return { ok: false, error: "The selected file is not a valid backup." };
       }
-      const candidate = payload as { app?: string; data?: unknown };
-      if (candidate.app !== "depot-backend" || !candidate.data) {
+      if (!isRecognizableBackup(payload)) {
         return {
           ok: false,
-          error: "This file was not created by the Depot backend.",
+          error: "This file was not created by this application.",
         };
       }
       try {
-        await api.backup.restore(candidate.data);
+        await api.backup.restore(payload);
         if (session) await loadAll(session.role);
         setCart([]);
         return { ok: true };
@@ -711,6 +725,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [session, loadAll],
   );
+
+  const resetData = useCallback(async (): Promise<void> => {
+    if (!canDo("backup.manage")) {
+      pushToast({
+        level: "danger",
+        title: "Could not reset data",
+        message: "You do not have permission to reset the catalog.",
+      });
+      return;
+    }
+    try {
+      await resetSampleCatalog();
+      setCart([]);
+      if (session) await loadAll(session.role);
+      else {
+        setProducts([]);
+        setCategories([]);
+        setSales([]);
+        setInventory([]);
+      }
+    } catch (err) {
+      pushToast({
+        level: "danger",
+        title: "Could not reset data",
+        message: errorMessage(err),
+      });
+    }
+  }, [session, loadAll, pushToast]);
 
   const value = useMemo<AppContextValue>(
     () => ({
@@ -760,6 +802,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateSettings,
       exportData,
       importData,
+      resetData,
     }),
     [
       ready,
@@ -807,6 +850,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateSettings,
       exportData,
       importData,
+      resetData,
     ],
   );
 

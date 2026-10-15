@@ -183,7 +183,7 @@ export function toSale(dto: ApiSale): Sale {
     })),
     subtotal: dto.subtotal,
     discount: dto.discount,
-    tax: 0,
+    tax: dto.tax ?? 0,
     total: dto.total,
     amountPaid: dto.amountPaid,
     change: dto.change,
@@ -221,6 +221,7 @@ export function toSettings(dto: ApiSettings): BusinessSettings {
     address: dto.address ?? "",
     phone: dto.phone ?? "",
     email: dto.email ?? "",
+    website: dto.website ?? "",
     currencySymbol: dto.currencySymbol ?? "$",
     currencyCode: dto.currency ?? "USD",
     invoicePrefix: dto.invoicePrefix ?? "INV",
@@ -279,13 +280,14 @@ export function productInputToApi(input: {
     sellingUnit: fromUnit(input.unit),
     price: input.price,
     costPrice: input.cost,
+    stock: input.stock,
     minStock: input.minStock,
     status: input.active ? "active" : "inactive",
   };
-  if (input.image && input.image.startsWith("http")) {
-    body.imageUrl = input.image;
-  } else if (input.image && !input.image.startsWith("data:")) {
-    body.imageUrl = input.image;
+  if (input.image !== undefined) {
+    // Relative asset paths, http(s) links and locally stored `data:image/…`
+    // photos all pass through; an empty string clears the stored image.
+    body.imageUrl = input.image.trim();
   }
   return body;
 }
@@ -293,7 +295,7 @@ export function productInputToApi(input: {
 export function categoryInputToApi(input: {
   name: string;
   description: string;
-}): Record<string, unknown> {
+}): { name: string; description: string } {
   return { name: input.name, description: input.description };
 }
 
@@ -306,6 +308,7 @@ export function settingsPatchToApi(
   if (patch.address !== undefined) body.address = patch.address;
   if (patch.phone !== undefined) body.phone = patch.phone;
   if (patch.email !== undefined) body.email = patch.email;
+  if (patch.website !== undefined) body.website = patch.website;
   if (patch.currencyCode !== undefined) body.currency = patch.currencyCode;
   if (patch.currencySymbol !== undefined)
     body.currencySymbol = patch.currencySymbol;

@@ -171,6 +171,7 @@ export interface BusinessSettings {
   address: string;
   phone: string;
   email: string;
+  website: string;
   currencySymbol: string;
   currencyCode: string;
   invoicePrefix: string;

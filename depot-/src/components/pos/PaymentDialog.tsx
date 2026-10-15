@@ -40,6 +40,7 @@ export function PaymentDialog({ onClose, onCompleted }: PaymentDialogProps) {
   const [applyTax, setApplyTax] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [processing, setProcessing] = useState(false);
 
   const totals = useMemo(
     () =>
@@ -63,31 +64,37 @@ export function PaymentDialog({ onClose, onCompleted }: PaymentDialogProps) {
     return [...values].filter((value) => value > 0).sort((a, b) => a - b);
   }, [total]);
 
-  const handleComplete = () => {
-    const result = checkout({
-      amountPaid: method === "Cash" ? paid || total : total,
-      paymentMethod: method,
-      customer: { name: customerName.trim(), phone: customerPhone.trim() },
-      discount: safeDiscount,
-      applyTax,
-    });
-
-    if (!result.ok || !result.sale) {
-      pushToast({
-        level: "danger",
-        title: "Sale not completed",
-        message: result.error,
+  const handleComplete = async () => {
+    if (processing) return;
+    setProcessing(true);
+    try {
+      const result = await checkout({
+        amountPaid: method === "Cash" ? paid || total : total,
+        paymentMethod: method,
+        customer: { name: customerName.trim(), phone: customerPhone.trim() },
+        discount: safeDiscount,
+        applyTax,
       });
-      return;
+
+      if (!result.ok || !result.sale) {
+        pushToast({
+          level: "danger",
+          title: "Sale not completed",
+          message: result.error,
+        });
+        return;
+      }
+      pushToast({
+        level: "success",
+        title: `Sale ${result.sale.invoiceNo} completed`,
+        message: `${formatCurrency(result.sale.total, currency)} · ${
+          result.sale.paymentMethod
+        }`,
+      });
+      onCompleted(result.sale);
+    } finally {
+      setProcessing(false);
     }
-    pushToast({
-      level: "success",
-      title: `Sale ${result.sale.invoiceNo} completed`,
-      message: `${formatCurrency(result.sale.total, currency)} · ${
-        result.sale.paymentMethod
-      }`,
-    });
-    onCompleted(result.sale);
   };
 
   const canComplete = items.length > 0 && (method !== "Cash" || paid >= total);
@@ -104,8 +111,12 @@ export function PaymentDialog({ onClose, onCompleted }: PaymentDialogProps) {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleComplete} disabled={!canComplete} size="lg">
-            Complete sale · {formatCurrency(total, currency)}
+          <Button
+            onClick={() => void handleComplete()}
+            disabled={!canComplete || processing}
+            size="lg"
+          >
+            {processing ? "Recording sale…" : `Complete sale · ${formatCurrency(total, currency)}`}
           </Button>
         </>
       }

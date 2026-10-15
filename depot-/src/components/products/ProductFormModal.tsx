@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { ImagePlus, Trash2 } from "lucide-react";
 import { useApp } from "../../hooks/useApp";
 import type { Product, Unit } from "../../types";
 import { UNITS } from "../../types";
+import { fileToStoredImage } from "../../lib/image";
 import { Button } from "../ui/Button";
 import { Field, Input, Select, Textarea } from "../ui/Input";
 import { Modal } from "../ui/Modal";
+import { ProductThumb } from "../ui/ProductThumb";
 import { Switch } from "../ui/Switch";
 
 interface FormState {
@@ -19,6 +22,7 @@ interface FormState {
   sku: string;
   barcode: string;
   description: string;
+  image: string;
   active: boolean;
 }
 
@@ -35,6 +39,7 @@ function emptyState(defaultCategoryId: string, defaultMinStock: number): FormSta
     sku: "",
     barcode: "",
     description: "",
+    image: "",
     active: true,
   };
 }
@@ -52,6 +57,7 @@ function fromProduct(product: Product): FormState {
     sku: product.sku,
     barcode: product.barcode,
     description: product.description,
+    image: product.image ?? "",
     active: product.active,
   };
 }
@@ -69,11 +75,33 @@ export function ProductFormModal({ product, onClose }: ProductFormModalProps) {
       : emptyState(categories[0]?.id ?? "", settings.lowStockDefault),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [imageBusy, setImageBusy] = useState(false);
+  const imageRef = useRef<HTMLInputElement>(null);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
 
-  const handleSubmit = () => {
+  const handleImage = async (file: File | undefined) => {
+    if (!file) return;
+    setImageBusy(true);
+    try {
+      const dataUrl = await fileToStoredImage(file);
+      update("image", dataUrl);
+      setErrors((current) => ({ ...current, image: "" }));
+    } catch (err) {
+      pushToast({
+        level: "danger",
+        title: "Could not add image",
+        message:
+          err instanceof Error ? err.message : "That image could not be read.",
+      });
+    } finally {
+      setImageBusy(false);
+      if (imageRef.current) imageRef.current.value = "";
+    }
+  };
+
+  const handleSubmit = async () => {
     const nextErrors: Record<string, string> = {};
     if (!form.name.trim()) nextErrors.name = "Product name is required.";
     if (!form.categoryId) nextErrors.categoryId = "Choose a category.";
@@ -96,14 +124,15 @@ export function ProductFormModal({ product, onClose }: ProductFormModalProps) {
       cost: Number(form.cost) || 0,
       stock: Math.max(0, Math.floor(Number(form.stock) || 0)),
       minStock: Math.max(0, Math.floor(Number(form.minStock) || 0)),
+      image: form.image,
       active: form.active,
     };
 
     if (product) {
-      updateProduct(product.id, input);
+      await updateProduct(product.id, input);
       pushToast({ level: "success", title: "Product updated", message: input.name });
     } else {
-      const created = addProduct(input);
+      const created = await addProduct(input);
       if (!created) {
         pushToast({
           level: "danger",
@@ -133,7 +162,7 @@ export function ProductFormModal({ product, onClose }: ProductFormModalProps) {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button onClick={() => void handleSubmit()}>
             {product ? "Save changes" : "Add product"}
           </Button>
         </>
@@ -237,6 +266,55 @@ export function ProductFormModal({ product, onClose }: ProductFormModalProps) {
             value={form.description}
             onChange={(event) => update("description", event.target.value)}
             placeholder="Optional short description"
+          />
+        </Field>
+        <Field
+          label="Product image"
+          hint="Stored on this device and shown offline at the POS"
+        >
+          <div className="flex items-center gap-4">
+            <ProductThumb
+              name={form.name.trim() || "Product"}
+              image={form.image || undefined}
+              size="lg"
+            />
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={imageBusy}
+                  onClick={() => imageRef.current?.click()}
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  {imageBusy
+                    ? "Processing…"
+                    : form.image
+                      ? "Replace image"
+                      : "Choose image"}
+                </Button>
+                {form.image ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => update("image", "")}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                PNG, JPEG or WebP · resized and saved in the local database
+              </p>
+            </div>
+          </div>
+          <input
+            ref={imageRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(event) => void handleImage(event.target.files?.[0])}
           />
         </Field>
         <div className="flex items-center justify-between rounded-lg border border-border bg-surface-muted/50 px-4 py-3">

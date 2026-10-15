@@ -84,7 +84,7 @@ export default function App() {
     return (
       <BootShell>
         <ErrorState
-          title="Cannot reach the server"
+          title="Could not load shop data"
           description={error}
           onRetry={() => void refresh()}
         />

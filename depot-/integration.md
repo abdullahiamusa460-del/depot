@@ -9,6 +9,12 @@ Integration reference generated from the **actual implementation** (`src/`). Use
 
 > Money is expressed in the shop's currency units (not minor units/kobo). All monetary values are rounded to 2 decimals server-side.
 
+> **Frontend note.** This REST API is the *remote* data source. The frontend
+> defaults to an offline, on-device IndexedDB implementation with the same
+> interface (`src/lib/data.ts` selects `local` vs `remote` via
+> `VITE_DATA_BACKEND`). Build with `VITE_DATA_BACKEND=remote npm run build` to
+> point the UI at this backend. See [OFFLINE_PWA.md](./OFFLINE_PWA.md).
+
 ---
 
 ## 1. Conventions

@@ -82,6 +82,8 @@ export interface ApiSale {
   items: ApiSaleItem[];
   subtotal: number;
   discount: number;
+  /** Present when the sale recorded a tax line (offline/local records). */
+  tax?: number;
   total: number;
   amountPaid: number;
   change: number;
@@ -121,6 +123,7 @@ export interface ApiSettings {
   address: string;
   phone: string;
   email: string;
+  website?: string;
   currency: string;
   currencySymbol: string;
   invoicePrefix: string;
@@ -381,6 +384,7 @@ export const api = {
       paymentMethod?: string;
       customer?: { name: string; phone: string };
       note?: string;
+      applyTax?: boolean;
     }) => request<ApiSale>("/sales", { method: "POST", body }),
   },
 

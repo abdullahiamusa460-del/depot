@@ -1,6 +1,7 @@
 import { createContext } from "react";
 import type {
   AuthSession,
+  BackupPayload,
   BusinessSettings,
   CartLine,
   Category,
@@ -53,6 +54,7 @@ export interface CheckoutInput {
   customer: { name: string; phone: string };
   discount: number;
   note?: string;
+  applyTax?: boolean;
 }
 
 export interface CheckoutResult {
@@ -129,8 +131,9 @@ export interface AppContextValue {
 
   updateSettings: (patch: Partial<BusinessSettings>) => Promise<void>;
 
-  exportData: () => Promise<string>;
+  exportData: () => Promise<BackupPayload>;
   importData: (payload: unknown) => Promise<{ ok: boolean; error?: string }>;
+  resetData: () => Promise<void>;
 }
 
 export const AppContext = createContext<AppContextValue | null>(null);

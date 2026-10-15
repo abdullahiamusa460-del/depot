@@ -3,7 +3,7 @@ import {
   GlassWater,
   Loader2,
   LogIn,
-  ServerCog,
+  WifiOff,
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Button } from "../components/ui/Button";
@@ -56,15 +56,15 @@ export default function Login() {
             </div>
 
             <span className="mt-9 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">
-              <ServerCog className="h-3.5 w-3.5" />
-              Connected to backend
+              <WifiOff className="h-3.5 w-3.5" />
+              Works offline · saved on this device
             </span>
             <h1 className="mt-4 text-2xl font-extrabold tracking-tight">
               Sign in to your account
             </h1>
             <p className="mt-2 text-sm text-white/85">
-              Authenticate with the email and password issued for your shop
-              account to load products, stock and sales.
+              Sign in to open the till. Products, stock, sales and receipts are
+              stored on this device and stay available without internet.
             </p>
           </div>
 
@@ -89,13 +89,14 @@ export default function Login() {
 
         <div className="p-8 lg:p-10">
           <form className="space-y-4" onSubmit={(event) => void submit(event)}>
-            <Field label="Email" htmlFor="login-email">
+            <Field label="Name or email" htmlFor="login-email">
               <Input
                 id="login-email"
-                type="email"
+                type="text"
+                inputMode="email"
                 value={email}
                 autoComplete="username"
-                placeholder="you@shop.com"
+                placeholder="admin or you@shop.com"
                 invalid={Boolean(error)}
                 onChange={(event) => {
                   setEmail(event.target.value);
@@ -155,9 +156,11 @@ export default function Login() {
           <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-border bg-surface-muted/60 p-3.5 text-xs leading-relaxed text-muted-foreground">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
-              First run? Create the shop administrator and sample catalog from the
-              backend with <span className="font-mono">npm run seed</span>, then
-              sign in with the credentials printed by the seed command.
+              Default accounts on this device:{" "}
+              <span className="font-mono">admin / admin123</span> (administrator)
+              and <span className="font-mono">staff / staff123</span> (shop
+              staff). You can also sign in with the account email. Change these
+              from the Team page after your first login.
             </span>
           </div>
         </div>

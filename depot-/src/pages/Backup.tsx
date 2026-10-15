@@ -20,7 +20,10 @@ import {
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { useApp } from "../hooks/useApp";
 import { formatDateTime } from "../lib/format";
-import type { BackupPayload } from "../types";
+import {
+  isRecognizableBackup,
+  normalizeBackupPayload,
+} from "../lib/backup";
 
 export default function Backup() {
   const {
@@ -34,9 +37,11 @@ export default function Backup() {
     pushToast,
   } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [pending, setPending] = useState<BackupPayload | null>(null);
+  const [pending, setPending] = useState<unknown>(null);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+
+  const pendingPreview = pending ? normalizeBackupPayload(pending) : null;
 
   const counts = [
     { label: "Products", value: products.length },
@@ -45,24 +50,32 @@ export default function Backup() {
     { label: "Stock movements", value: inventory.length },
   ];
 
-  const handleExport = () => {
-    const payload = exportData();
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `beverage-pos-backup-${new Date()
-      .toISOString()
-      .slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    pushToast({
-      level: "success",
-      title: "Backup downloaded",
-      message: "Keep the file somewhere safe.",
-    });
+  const handleExport = async () => {
+    try {
+      const payload = await exportData();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `beverage-pos-backup-${new Date()
+        .toISOString()
+        .slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      pushToast({
+        level: "success",
+        title: "Backup downloaded",
+        message: "Keep the file somewhere safe.",
+      });
+    } catch (err) {
+      pushToast({
+        level: "danger",
+        title: "Export failed",
+        message: err instanceof Error ? err.message : "Could not export data.",
+      });
+    }
   };
 
   const handleFile = async (file: File | undefined) => {
@@ -70,13 +83,7 @@ export default function Backup() {
     try {
       const text = await file.text();
       const parsed = JSON.parse(text) as unknown;
-      const candidate = parsed as Partial<BackupPayload>;
-      if (
-        candidate.app !== "beverage-shop-pos" ||
-        !candidate.data ||
-        !Array.isArray(candidate.data.products) ||
-        !Array.isArray(candidate.data.sales)
-      ) {
+      if (!isRecognizableBackup(parsed)) {
         pushToast({
           level: "danger",
           title: "Invalid backup file",
@@ -84,7 +91,7 @@ export default function Backup() {
         });
         return;
       }
-      setPending(candidate as BackupPayload);
+      setPending(parsed);
       setRestoreOpen(true);
     } catch {
       pushToast({
@@ -133,7 +140,7 @@ export default function Backup() {
                 </div>
               ))}
             </div>
-            <Button className="mt-4 w-full" onClick={handleExport}>
+            <Button className="mt-4 w-full" onClick={() => void handleExport()}>
               <Download className="h-4 w-4" />
               Download backup (.json)
             </Button>
@@ -213,11 +220,11 @@ export default function Backup() {
         open={restoreOpen}
         title="Restore this backup?"
         message={
-          pending
+          pendingPreview
             ? `This will replace your current data with the backup exported on ${formatDateTime(
-                pending.exportedAt,
-              )} (${pending.data.products?.length ?? 0} products, ${
-                pending.data.sales?.length ?? 0
+                pendingPreview.exportedAt,
+              )} (${pendingPreview.data.products.length} products, ${
+                pendingPreview.data.sales.length
               } sales).`
             : ""
         }
@@ -227,9 +234,9 @@ export default function Backup() {
           setRestoreOpen(false);
           setPending(null);
         }}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!pending) return;
-          const result = importData(pending);
+          const result = await importData(pending);
           if (result.ok) {
             pushToast({
               level: "success",
@@ -252,8 +259,8 @@ export default function Backup() {
         message="All products, sales and stock history will be replaced with sample data. This cannot be undone."
         confirmLabel="Reset data"
         onClose={() => setResetOpen(false)}
-        onConfirm={() => {
-          resetData();
+        onConfirm={async () => {
+          await resetData();
           pushToast({ level: "success", title: "Data reset", message: "Sample data restored." });
         }}
       />
