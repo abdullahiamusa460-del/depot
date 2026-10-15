@@ -1,0 +1,353 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  ============================================================
+  Centralized design tokens
+  ------------------------------------------------------------
+  Change the palette here and the whole app follows.
+  Light + dark values are declared as CSS variables, then mapped
+  to Tailwind utilities through @theme inline below.
+  ============================================================
+*/
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --canvas: #f4f7f9;
+  --surface: #ffffff;
+  --surface-muted: #eef3f6;
+  --surface-sunken: #e7eef2;
+  --overlay: rgba(15, 23, 42, 0.45);
+
+  /* Lines & text */
+  --border: #e0e8ee;
+  --border-strong: #c8d5df;
+  --foreground: #0f1f2e;
+  --muted-foreground: #5c7085;
+  --subtle-foreground: #8ba0b3;
+
+  /* Brand */
+  --primary: #0d9488;
+  --primary-strong: #0f766e;
+  --primary-soft: #ccfbf1;
+  --primary-foreground: #ffffff;
+
+  /* Support colors */
+  --accent: #f59e0b;
+  --accent-soft: #fef3c7;
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --warning: #d97706;
+  --warning-soft: #fef3c7;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --info: #2563eb;
+  --info-soft: #dbeafe;
+
+  /* Sidebar */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #33475b;
+  --sidebar-muted: #7b8ea3;
+  --sidebar-active: #0d9488;
+  --sidebar-active-soft: #e6fbf7;
+  --sidebar-border: #e6edf2;
+
+  /* Effects */
+  --ring: rgba(13, 148, 136, 0.35);
+  --shadow-xs: 0 1px 2px rgba(15, 31, 46, 0.06);
+  --shadow-sm: 0 1px 3px rgba(15, 31, 46, 0.08), 0 1px 2px rgba(15, 31, 46, 0.04);
+  --shadow-md: 0 6px 16px -4px rgba(15, 31, 46, 0.12), 0 2px 6px -2px rgba(15, 31, 46, 0.06);
+  --shadow-lg: 0 16px 40px -12px rgba(15, 31, 46, 0.2), 0 6px 14px -6px rgba(15, 31, 46, 0.1);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --canvas: #0a111d;
+  --surface: #111b2c;
+  --surface-muted: #16233a;
+  --surface-sunken: #0d1727;
+  --overlay: rgba(2, 6, 23, 0.65);
+
+  --border: #23334c;
+  --border-strong: #334765;
+  --foreground: #e9f0f8;
+  --muted-foreground: #9db0c5;
+  --subtle-foreground: #6b7f96;
+
+  --primary: #2dd4bf;
+  --primary-strong: #5eead4;
+  --primary-soft: #103c3a;
+  --primary-foreground: #062420;
+
+  --accent: #fbbf24;
+  --accent-soft: #3a2e0a;
+  --success: #4ade80;
+  --success-soft: #0f3320;
+  --warning: #fbbf24;
+  --warning-soft: #3a2e0a;
+  --danger: #f87171;
+  --danger-soft: #3d1414;
+  --info: #60a5fa;
+  --info-soft: #12294d;
+
+  --sidebar: #0d1727;
+  --sidebar-foreground: #c3d2e2;
+  --sidebar-muted: #7d90a6;
+  --sidebar-active: #2dd4bf;
+  --sidebar-active-soft: #10302f;
+  --sidebar-border: #1c2b41;
+
+  --ring: rgba(45, 212, 191, 0.4);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 16px -4px rgba(0, 0, 0, 0.5), 0 2px 6px -2px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 16px 40px -12px rgba(0, 0, 0, 0.6), 0 6px 14px -6px rgba(0, 0, 0, 0.4);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-overlay: var(--overlay);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-soft: var(--sidebar-active-soft);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --color-ring: var(--ring);
+
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-3xl: 30px;
+
+  --animate-fade-in: fade-in 0.25s ease-out both;
+  --animate-fade-up: fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-sheet-up: sheet-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-toast-in: toast-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-scale-in: scale-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--canvas);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+    background-clip: content-box;
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-muted);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+.dark .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body.printing-receipt #root {
+    display: none !important;
+  }
+
+  body.printing-receipt .receipt-modal-overlay {
+    position: static !important;
+    background: none !important;
+    padding: 0 !important;
+  }
+
+  body.printing-receipt .receipt-modal-panel {
+    position: static !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: 80mm !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    animation: none !important;
+  }
+
+  body.printing-receipt .receipt-modal-body {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}
