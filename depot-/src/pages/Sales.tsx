@@ -6,6 +6,7 @@ import {
 import { useMemo, useState } from "react";
 import { PageHeader } from "../components/layout/PageHeader";
 import { ReceiptDialog } from "../components/pos/ReceiptDialog";
+import { PaymentSummaryCards } from "../components/sales/PaymentSummaryCards";
 import { Badge } from "../components/ui/Badge";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -77,9 +78,11 @@ export default function Sales() {
     return { from: fromDate, to: toDate };
   }, [preset, from, to, today]);
 
+  const rangeSales = useMemo(() => filterSales(sales, range), [sales, range]);
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return filterSales(sales, range)
+    return rangeSales
       .filter((sale) => method === "all" || sale.paymentMethod === method)
       .filter((sale) => {
         if (!term) return true;
@@ -88,7 +91,7 @@ export default function Sales() {
           sale.customer.name.toLowerCase().includes(term)
         );
       });
-  }, [sales, range, method, search]);
+  }, [rangeSales, method, search]);
 
   const totalRevenue = sumRevenue(filtered);
 
@@ -125,6 +128,25 @@ export default function Sales() {
           />
         )}
       </div>
+
+      {showFinancials && (
+        <section className="mt-5">
+          <div className="mb-3">
+            <h2 className="text-base font-bold tracking-tight text-foreground">
+              Payment summary
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Takings by payment method for the selected period, in {currency}.
+              Filters above do not affect these totals.
+            </p>
+          </div>
+          <PaymentSummaryCards
+            sales={rangeSales}
+            currency={currency}
+            totalLabel="Total sales"
+          />
+        </section>
+      )}
 
       <Card className="mt-5 overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">

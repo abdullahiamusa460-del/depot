@@ -43,6 +43,7 @@ sale is reflected everywhere at once.
 | Workflow | Writes | Reflected in |
 | --- | --- | --- |
 | Add product | `products` + a `Stock received` ledger entry | Products table, POS picker, Inventory levels/history, Dashboard + Inventory valuation summaries |
+| Add / replace / remove product photo | `products.imageUrl` (downscaled and stored as a local `data:image/…` value) | Products table + POS/cart Inventory thumbnails, shown offline |
 | Edit product (price/cost/details) | `products` | Products table, POS picker/pricing, valuation (retail/cost), reports |
 | Edit product **stock** | `products` + `Manual adjustment` ledger entry | Same as above + stock history |
 | Delete product | `products` (and removes it from the cart) | Products table, POS picker, summaries |
@@ -77,9 +78,10 @@ sale object, so the printed figure always equals the recorded figure.
 - **Authentication is real (locally).** Passwords are salted and hashed (SHA-256
   via `crypto.subtle`, with a plain-JS fallback on insecure origins) in
   `src/lib/local/db.ts`; only the hash is stored. The seeded accounts are
-  `admin@beverage.local` / `admin123` and `staff@beverage.local` / `staff123`,
-  and sign-in accepts either the account email or the account name ("admin",
-  "staff"). Change them from the Team page.
+  `dazumiglobalventuresadmin@gmail.com` / `Admin@001` (admin) and
+  `dazumiglobalventuresstaff@gmail.com` / `Staff@002` (staff), and sign-in
+  accepts either the account email or the account name ("Admin", "Staff").
+  Change them from the Team page.
 - **Everything persists.** Products, stock, the inventory ledger, sales,
   settings and staff edits are written to IndexedDB and **survive reloads and
   restarts**. `navigator.storage.persist()` is requested so the browser is less

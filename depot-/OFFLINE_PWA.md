@@ -137,7 +137,8 @@ default deliberately: it is the only mode that satisfies the offline requirement
 
 - **Export** (Backup page, Admin only) downloads a JSON file:
   `{ app: "beverage-shop-pos", version, exportedAt, data: { categories,
-  products, sales, inventoryTransactions, settings } }`.
+  products, sales, inventoryTransactions, settings } }`. Locally stored product
+  photos (data URLs) are included, so a backup is fully self-contained.
 - **Restore** replaces the on-device data from such a file (also accepts files
   from the Depot backend). Restore validates the shape before touching the
   database.
@@ -162,7 +163,7 @@ npm run verify:offline      # needs `chromium` on PATH; override with CHROME=/pa
 It exits non-zero if any check fails. The same steps can be done by hand:
 
 1. `npm run build && npm run preview`.
-2. Open the app, sign in (`admin` / `admin123`).
+2. Open the app, sign in (`dazumiglobalventuresadmin@gmail.com` / `Admin@001`).
 3. Complete a sale → note the invoice number.
 4. Open DevTools → Application → confirm **Manifest** is valid, the **Service
    Worker** is *activated and running*, and the app-shell cache is populated.
@@ -192,6 +193,11 @@ the server shut down mid-session (all passing):
 - [x] Manifest, icons and fonts are served offline.
 - [x] **Sale completes while fully offline** (`INV-000002`).
 - [x] Offline sale persisted with correct stock and sequential invoices.
+- [x] Product photo added offline is downscaled and stored in IndexedDB as a
+      local `data:image/…` URL and renders in the catalogue.
+- [x] Backup exports offline (products, categories, sales, movements, settings).
+- [x] Backup restores offline: an extra product is removed and receipts keep
+      their invoice numbers.
 - [x] No uncaught console errors during the run.
 
 Manifest check: `Page.getAppManifest` reports **no errors** and

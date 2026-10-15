@@ -157,10 +157,15 @@ export default function Login() {
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
               Default accounts on this device:{" "}
-              <span className="font-mono">admin / admin123</span> (administrator)
-              and <span className="font-mono">staff / staff123</span> (shop
-              staff). You can also sign in with the account email. Change these
-              from the Team page after your first login.
+              <span className="font-mono">
+                dazumiglobalventuresadmin@gmail.com / Admin@001
+              </span>{" "}
+              (administrator) and{" "}
+              <span className="font-mono">
+                dazumiglobalventuresstaff@gmail.com / Staff@002
+              </span>{" "}
+              (shop staff). You can also sign in with the account name. Change
+              these from the Team page after your first login.
             </span>
           </div>
         </div>

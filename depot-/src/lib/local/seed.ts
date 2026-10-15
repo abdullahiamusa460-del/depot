@@ -175,17 +175,23 @@ const SAMPLE_PRODUCTS: SampleProductInput[] = [
 const SAMPLE_ACCOUNTS = [
   {
     name: "Admin",
-    email: "admin@beverage.local",
+    email: "dazumiglobalventuresadmin@gmail.com",
     role: "admin" as const,
-    password: "admin123",
+    password: "Admin@001",
   },
   {
     name: "Staff",
-    email: "staff@beverage.local",
+    email: "dazumiglobalventuresstaff@gmail.com",
     role: "staff" as const,
-    password: "staff123",
+    password: "Staff@002",
   },
 ];
+
+/** Emails used by earlier builds, upgraded to the current sample accounts once. */
+const LEGACY_SAMPLE_EMAILS: Record<string, string> = {
+  "admin@beverage.local": "dazumiglobalventuresadmin@gmail.com",
+  "staff@beverage.local": "dazumiglobalventuresstaff@gmail.com",
+};
 
 async function buildSampleUsers(): Promise<StoredUser[]> {
   const timestamp = nowIso();
@@ -224,9 +230,117 @@ export function ensureSeeded(): Promise<void> {
   return seedPromise;
 }
 
+/**
+ * One-time repair for databases seeded before sample products were linked to
+ * their categories correctly: backfills any product left with an empty
+ * `category` using the sample SKU → category mapping. Guarded by a `meta`
+ * flag so it runs at most once per device.
+ */
+async function repairSampleCategoryRefs(): Promise<void> {
+  const done = await getItem<{ key: string; value: boolean }>(
+    "meta",
+    "sampleCategoryRefsRepaired",
+  );
+  if (done?.value) return;
+
+  await runTransaction(["products", "categories", "meta"], "readwrite", async (tx) => {
+    const products = (await reqAsPromise(
+      tx.objectStore("products").getAll(),
+    )) as ApiProduct[];
+    const broken = products.filter((product) => !product.category);
+    if (broken.length > 0) {
+      const categories = (await reqAsPromise(
+        tx.objectStore("categories").getAll(),
+      )) as ApiCategory[];
+      const idByName = new Map<string, string>();
+      for (const category of categories) {
+        idByName.set(category.name.trim().toLowerCase(), category._id);
+      }
+      const categoryNameBySku = new Map<string, string>();
+      for (const sample of SAMPLE_PRODUCTS) {
+        const name = SAMPLE_CATEGORIES.find(
+          (category) => category.key === sample.category,
+        )?.name;
+        if (name) categoryNameBySku.set(sample.sku.toUpperCase(), name);
+      }
+      for (const product of broken) {
+        const name = categoryNameBySku.get(String(product.sku ?? "").toUpperCase());
+        const categoryId = name ? idByName.get(name.toLowerCase()) : undefined;
+        if (categoryId) {
+          tx.objectStore("products").put({
+            ...product,
+            category: categoryId,
+            updatedAt: nowIso(),
+          });
+        }
+      }
+    }
+    tx.objectStore("meta").put({
+      key: "sampleCategoryRefsRepaired",
+      value: true,
+    });
+  });
+}
+
+/**
+ * One-time upgrade of the bundled accounts to the current credentials.
+ *
+ * The first-run seed only runs once, so a device seeded by an earlier build
+ * keeps the old logins. This updates any account still using a legacy sample
+ * email to the current email/password (re-hashing the password), and seeds the
+ * sample accounts if the device somehow has no users at all. Guarded by a
+ * `meta` flag so it runs at most once; accounts whose email was changed away
+ * from the sample are left untouched.
+ */
+async function applySampleAccountUpdates(): Promise<void> {
+  const done = await getItem<{ key: string; value: boolean }>(
+    "meta",
+    "sampleAccountsUpdated",
+  );
+  if (done?.value) return;
+
+  await runTransaction(["users", "meta"], "readwrite", async (tx) => {
+    const store = tx.objectStore("users");
+    const users = (await reqAsPromise(store.getAll())) as StoredUser[];
+
+    if (users.length === 0) {
+      for (const user of await buildSampleUsers()) store.put(user);
+    } else {
+      for (const account of SAMPLE_ACCOUNTS) {
+        const legacyEmail = Object.entries(LEGACY_SAMPLE_EMAILS).find(
+          ([, current]) => current === account.email,
+        )?.[0];
+        const match = users.find((user) => {
+          const email = user.email.trim().toLowerCase();
+          return (
+            email === account.email.toLowerCase() ||
+            (legacyEmail ? email === legacyEmail.toLowerCase() : false)
+          );
+        });
+        if (!match) continue;
+        const salt = newSalt();
+        store.put({
+          ...match,
+          email: account.email,
+          salt,
+          passwordHash: await hashPassword(account.password, salt),
+          active: true,
+          updatedAt: nowIso(),
+        });
+      }
+    }
+
+    tx.objectStore("meta").put({ key: "sampleAccountsUpdated", value: true });
+  });
+}
+
 async function runSeed(): Promise<void> {
   const flag = await getItem<{ key: string; value: boolean }>("meta", "seeded");
-  if (flag?.value) return;
+  if (flag?.value) {
+    await repairSampleCategoryRefs();
+    await applySampleAccountUpdates();
+    return;
+  }
 
   await runTransaction(
     ["meta", "users", "categories", "products", "transactions", "settings"],
@@ -278,6 +392,13 @@ async function runSeed(): Promise<void> {
           createdAt: timestamp,
           updatedAt: timestamp,
         });
+      }
+      // Sample products reference categories by their slug (`sample.category`),
+      // so resolve that key to the same id as the human-readable name.
+      for (const sample of SAMPLE_CATEGORIES) {
+        if (categoryIdByName.has(sample.key)) continue;
+        const byName = categoryIdByName.get(sample.name.trim().toLowerCase());
+        if (byName) categoryIdByName.set(sample.key, byName);
       }
 
       const productCount = await reqAsPromise(tx.objectStore("products").count());

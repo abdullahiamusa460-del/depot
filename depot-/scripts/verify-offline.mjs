@@ -407,7 +407,7 @@ try {
   );
   check(
     "Login copy lists the seeded credentials",
-    /admin \/ admin123/.test(loginText),
+    /dazumiglobalventuresadmin@gmail\.com \/ Admin@001/.test(loginText),
   );
 
   check(
@@ -416,8 +416,8 @@ try {
     requestUrls.filter((url) => !url.startsWith(BASE)).join(", ") || "none",
   );
 
-  await setInput("#login-email", "admin");
-  await setInput('input[type="password"]', "admin123");
+  await setInput("#login-email", "dazumiglobalventuresadmin@gmail.com");
+  await setInput('input[type="password"]', "Admin@001");
   await clickText("Sign in");
 
   await waitFor(`!document.querySelector('#login-email')`, {
@@ -547,8 +547,8 @@ try {
     `Boolean(document.querySelector('#login-email'))`,
   );
   if (isLoginVisible) {
-    await setInput("#login-email", "admin");
-    await setInput('input[type="password"]', "admin123");
+    await setInput("#login-email", "dazumiglobalventuresadmin@gmail.com");
+    await setInput('input[type="password"]', "Admin@001");
     await clickText("Sign in");
     await waitFor(`!document.querySelector('#login-email')`, {
       timeout: 15000,

@@ -18,6 +18,8 @@ import {
   UnitStockBreakdown,
 } from "../components/inventory/StockValueSummary";
 import { PageHeader } from "../components/layout/PageHeader";
+import { PaymentBreakdownList } from "../components/sales/PaymentBreakdownList";
+import { PaymentSummaryCards } from "../components/sales/PaymentSummaryCards";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
@@ -49,7 +51,7 @@ const paymentColors: Record<string, string> = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { products, sales, settings, can } = useApp();
+  const { products, sales, settings, can, loading, error, refresh } = useApp();
   const currency = settings.currencySymbol;
   const showFinancials = can("sales.viewFinancials");
   const canSell = can("pos.sell");
@@ -195,6 +197,42 @@ export default function Dashboard() {
           />
         )}
       </div>
+
+      <section className="mt-5">
+        <div className="mb-3">
+          <h2 className="text-base font-bold tracking-tight text-foreground">
+            Today's sales payment summary
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Takings recorded today (
+            {now.toLocaleDateString("en-NG", { day: "numeric", month: "long" })}
+            ) broken down by payment method, in {currency}.
+          </p>
+        </div>
+        {showFinancials && (
+          <PaymentSummaryCards
+            sales={todaySales}
+            currency={currency}
+            loading={loading}
+            className="mb-4"
+          />
+        )}
+        <PaymentBreakdownList
+          title="Today's transactions"
+          description="Each sale recorded today with its payment method and amount."
+          sales={todaySales}
+          currency={currency}
+          limit={8}
+          loading={loading}
+          error={error}
+          onRetry={() => void refresh()}
+          action={
+            <Button variant="ghost" size="sm" onClick={() => navigate("/sales")}>
+              View all <ArrowRight className="h-4 w-4" />
+            </Button>
+          }
+        />
+      </section>
 
       <section className="mt-5">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2">

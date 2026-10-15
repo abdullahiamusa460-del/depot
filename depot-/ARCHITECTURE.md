@@ -90,6 +90,15 @@ level, not just in the UI:
   inputs) and mirrored by `src/lib/checkout.ts` (`computeSaleTotals`,
   `validateSaleStock`), which is the single source of truth shared by the
   payment preview and the recorded sale.
+- **Product photos are local**: the product form lets the shop pick an image
+  file; it is downscaled in the browser (max 1024 px edge) and stored as a
+  `data:image/…` value in the product's `imageUrl`, so the photo lives in
+  IndexedDB and displays at the POS with no network. `src/lib/local/localApi.ts`
+  validates `imageUrl` (uploaded photo within a size cap, an `http(s)` link, or a
+  self-hosted `/…` asset path) and backup restore re-checks it.
+- **Catalog references stay valid**: sample products are linked to their seeded
+  categories by slug (`src/lib/local/seed.ts`); a one-time `meta`-guarded repair
+  backfills any product previously stored with an empty category reference.
 - **First-run seeding** runs once inside a transaction guarded by the `meta`
   `seeded` flag, so two tabs opening together cannot double-seed.
 
@@ -151,6 +160,13 @@ Verified on this machine (`npm run build && npm run verify:offline`):
 - [x] Manifest, icons and fonts are served offline.
 - [x] **A sale completes while fully offline** (`INV-000002`), persisted with
       correct stock and sequential invoices.
+- [x] A product is created offline with a photo picked from the device; the
+      downscaled photo is stored in IndexedDB as a local `data:image/…` URL and
+      renders in the catalogue with the network down.
+- [x] **Backup exports offline** with products, categories, sales, stock
+      movements and settings (including the stored photo).
+- [x] **Backup restores offline**: a product added after the export disappears
+      and sales keep their `INV-000001` / `INV-000002` numbers.
 - [x] No uncaught console errors during the run.
 
 Other checks: `npm run typecheck` (tsc) passes and `npm run lint` (oxlint)
@@ -162,8 +178,8 @@ view components.
 - No cloud sync, no online API, no server requirement for daily operation.
 - No barcode hardware integration (noted in the POS UI).
 - Receipt "Print" uses the browser print dialog; there is no printer driver.
-- User-uploaded product images are not yet offered in the product form; seed
-  images are self-hosted assets precached by the service worker. The data model
-  (`Product.image` → `imageUrl`) and IndexedDB already persist any image
-  reference. Adding an upload picker that stores a data URL is a small,
-  self-contained enhancement and would not require a backend.
+- Product images are entered through a local file picker and stored in
+  IndexedDB as `data:image/…` values; seed images are self-hosted assets
+  precached by the service worker. No upload endpoint or backend is involved.
+- Cross-device sync is not provided: each device keeps its own IndexedDB, and
+  Backup/Restore is the only way to move data between devices.

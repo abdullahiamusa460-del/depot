@@ -1,4 +1,11 @@
-import type { PaymentMethod, Product, Sale, SaleItem, Unit } from "../types";
+import {
+  PAYMENT_METHODS,
+  type PaymentMethod,
+  type Product,
+  type Sale,
+  type SaleItem,
+  type Unit,
+} from "../types";
 import { lineTotal } from "./cart";
 import { toDateKey } from "./format";
 
@@ -128,6 +135,74 @@ export function paymentBreakdown(
     map.set(sale.paymentMethod, (map.get(sale.paymentMethod) ?? 0) + sale.total);
   }
   return [...map.entries()].map(([label, value]) => ({ label, value }));
+}
+
+/**
+ * The three core payment methods are always summarised (even at zero) so the
+ * layout stays stable; any other method that actually took money is appended so
+ * no takings are hidden.
+ */
+export const PRIMARY_PAYMENT_METHODS: PaymentMethod[] = [
+  "Cash",
+  "POS",
+  "Bank Transfer",
+];
+
+export interface PaymentSummaryRow {
+  method: PaymentMethod;
+  total: number;
+  transactions: number;
+  /** Share of the total takings, as a whole percentage. */
+  share: number;
+}
+
+export interface PaymentSummary {
+  rows: PaymentSummaryRow[];
+  total: number;
+  transactions: number;
+  average: number;
+}
+
+export function paymentSummary(sales: Sale[]): PaymentSummary {
+  const totals = new Map<PaymentMethod, { total: number; transactions: number }>();
+  for (const sale of sales) {
+    const entry = totals.get(sale.paymentMethod) ?? { total: 0, transactions: 0 };
+    entry.total += sale.total;
+    entry.transactions += 1;
+    totals.set(sale.paymentMethod, entry);
+  }
+
+  const order: PaymentMethod[] = [];
+  for (const method of [...PRIMARY_PAYMENT_METHODS, ...PAYMENT_METHODS]) {
+    if (!order.includes(method)) order.push(method);
+  }
+
+  const rows: PaymentSummaryRow[] = order
+    .filter(
+      (method) => PRIMARY_PAYMENT_METHODS.includes(method) || totals.has(method),
+    )
+    .map((method) => {
+      const entry = totals.get(method);
+      return {
+        method,
+        total: entry?.total ?? 0,
+        transactions: entry?.transactions ?? 0,
+        share: 0,
+      };
+    });
+
+  const total = rows.reduce((sum, row) => sum + row.total, 0);
+  const transactions = rows.reduce((sum, row) => sum + row.transactions, 0);
+  for (const row of rows) {
+    row.share = total > 0 ? Math.round((row.total / total) * 100) : 0;
+  }
+
+  return {
+    rows,
+    total,
+    transactions,
+    average: transactions > 0 ? total / transactions : 0,
+  };
 }
 
 export interface CategoryStat {
