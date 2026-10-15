@@ -1,6 +1,7 @@
 import type { BusinessSettings, Sale } from "../../types";
 import { lineTotal } from "../../lib/cart";
 import { formatCurrency, formatDateTime } from "../../lib/format";
+import { Logo } from "../ui/Logo";
 
 export interface ReceiptViewProps {
   sale: Sale;
@@ -12,6 +13,9 @@ export function ReceiptView({ sale, settings }: ReceiptViewProps) {
   return (
     <div className="mx-auto w-full max-w-[320px] bg-surface p-5 font-mono text-[12px] leading-relaxed text-foreground">
       <div className="text-center">
+        <div className="mx-auto mb-2 h-14 w-14 overflow-hidden rounded-lg">
+          <Logo className="h-full w-full" />
+        </div>
         <h2 className="text-base font-extrabold uppercase tracking-wide">
           {settings.shopName}
         </h2>

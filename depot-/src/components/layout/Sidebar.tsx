@@ -1,4 +1,4 @@
-import { GlassWater, X } from "lucide-react";
+import { X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { navSectionsForPermissions } from "../../config/navigation";
 import { roleMeta } from "../../config/roles";
@@ -6,6 +6,7 @@ import { useApp } from "../../hooks/useApp";
 import { cn } from "../../lib/cn";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
+import { Logo } from "../ui/Logo";
 
 export interface SidebarProps {
   onNavigate?: () => void;
@@ -22,8 +23,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <aside className="flex h-full w-full flex-col border-r border-sidebar-border bg-sidebar">
       <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-strong text-primary-foreground shadow-sm">
-          <GlassWater className="h-5 w-5" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-border">
+          <Logo className="h-full w-full" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-extrabold tracking-tight text-foreground">

@@ -1,6 +1,5 @@
 import {
   AlertTriangle,
-  GlassWater,
   Loader2,
   LogIn,
   WifiOff,
@@ -8,6 +7,7 @@ import {
 import { useState, type FormEvent } from "react";
 import { Button } from "../components/ui/Button";
 import { Field, Input } from "../components/ui/Input";
+import { Logo } from "../components/ui/Logo";
 import { Switch } from "../components/ui/Switch";
 import { ThemeToggle } from "../components/ui/ThemeToggle";
 import { useApp } from "../hooks/useApp";
@@ -44,8 +44,8 @@ export default function Login() {
         <div className="flex flex-col justify-between gap-8 bg-gradient-to-br from-primary to-primary-strong p-8 text-primary-foreground lg:p-10">
           <div>
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
-                <GlassWater className="h-6 w-6" />
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
+                <Logo className="h-full w-full" />
               </span>
               <div>
                 <p className="text-lg font-extrabold tracking-tight">
