@@ -23,6 +23,7 @@ import type {
   Permission,
   Product,
   Sale,
+  SalePaymentMethod,
   StaffAccount,
   StockReason,
   Unit,
@@ -118,6 +119,17 @@ export function toPaymentMethod(value: string | undefined): PaymentMethod {
   return PAYMENT_FROM_API[(value ?? "").toLowerCase()] ?? "Cash";
 }
 
+/**
+ * Like {@link toPaymentMethod}, but for records read back from storage. A sale
+ * that never captured a payment method (older records, older backups) maps to
+ * `"Unknown"` so the reports never claim it was Cash.
+ */
+export function toSalePaymentMethod(
+  value: string | undefined,
+): SalePaymentMethod {
+  return PAYMENT_FROM_API[(value ?? "").trim().toLowerCase()] ?? "Unknown";
+}
+
 export function fromPaymentMethod(value: PaymentMethod): string {
   return PAYMENT_TO_API[value] ?? "cash";
 }
@@ -187,7 +199,7 @@ export function toSale(dto: ApiSale): Sale {
     total: dto.total,
     amountPaid: dto.amountPaid,
     change: dto.change,
-    paymentMethod: toPaymentMethod(dto.paymentMethod),
+    paymentMethod: toSalePaymentMethod(dto.paymentMethod),
     customer: {
       name: dto.customer?.name ?? "",
       phone: dto.customer?.phone ?? "",

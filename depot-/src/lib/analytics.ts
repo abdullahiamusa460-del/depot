@@ -1,9 +1,10 @@
 import {
-  PAYMENT_METHODS,
+  SALE_PAYMENT_METHODS,
   type PaymentMethod,
   type Product,
   type Sale,
   type SaleItem,
+  type SalePaymentMethod,
   type Unit,
 } from "../types";
 import { lineTotal } from "./cart";
@@ -128,8 +129,8 @@ export function productStats(sales: Sale[]): ProductStat[] {
 export function paymentBreakdown(
   sales: Sale[],
   methods: PaymentMethod[],
-): { label: PaymentMethod; value: number }[] {
-  const map = new Map<PaymentMethod, number>();
+): { label: SalePaymentMethod; value: number }[] {
+  const map = new Map<SalePaymentMethod, number>();
   methods.forEach((method) => map.set(method, 0));
   for (const sale of sales) {
     map.set(sale.paymentMethod, (map.get(sale.paymentMethod) ?? 0) + sale.total);
@@ -149,7 +150,7 @@ export const PRIMARY_PAYMENT_METHODS: PaymentMethod[] = [
 ];
 
 export interface PaymentSummaryRow {
-  method: PaymentMethod;
+  method: SalePaymentMethod;
   total: number;
   transactions: number;
   /** Share of the total takings, as a whole percentage. */
@@ -163,23 +164,46 @@ export interface PaymentSummary {
   average: number;
 }
 
+/**
+ * Per-payment-method takings for a set of completed sales.
+ *
+ * - The three core methods (Cash, POS, Bank Transfer) are always present, even
+ *   at zero, so the layout stays stable.
+ * - Any other method that actually took money is appended so no takings are
+ *   hidden, including a `"Not recorded"` bucket for legacy sales that never
+ *   captured a method. That bucket is shown only when such sales exist and is
+ *   never folded into Cash.
+ * - Sales are de-duplicated by `id`, so a completed sale can only ever be
+ *   counted once.
+ */
 export function paymentSummary(sales: Sale[]): PaymentSummary {
-  const totals = new Map<PaymentMethod, { total: number; transactions: number }>();
+  const seen = new Set<string>();
+  const totals = new Map<
+    SalePaymentMethod,
+    { total: number; transactions: number }
+  >();
   for (const sale of sales) {
-    const entry = totals.get(sale.paymentMethod) ?? { total: 0, transactions: 0 };
+    if (sale.id) {
+      if (seen.has(sale.id)) continue;
+      seen.add(sale.id);
+    }
+    const method = sale.paymentMethod ?? "Unknown";
+    const entry = totals.get(method) ?? { total: 0, transactions: 0 };
     entry.total += sale.total;
     entry.transactions += 1;
-    totals.set(sale.paymentMethod, entry);
+    totals.set(method, entry);
   }
 
-  const order: PaymentMethod[] = [];
-  for (const method of [...PRIMARY_PAYMENT_METHODS, ...PAYMENT_METHODS]) {
+  const order: SalePaymentMethod[] = [];
+  for (const method of [...PRIMARY_PAYMENT_METHODS, ...SALE_PAYMENT_METHODS]) {
     if (!order.includes(method)) order.push(method);
   }
 
   const rows: PaymentSummaryRow[] = order
     .filter(
-      (method) => PRIMARY_PAYMENT_METHODS.includes(method) || totals.has(method),
+      (method) =>
+        PRIMARY_PAYMENT_METHODS.includes(method as PaymentMethod) ||
+        totals.has(method),
     )
     .map((method) => {
       const entry = totals.get(method);

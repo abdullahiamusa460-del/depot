@@ -75,6 +75,25 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
   "Other",
 ];
 
+/**
+ * Payment method as recorded on a sale.
+ *
+ * `"Unknown"` is used for records created before payment methods were captured
+ * (or restored from an older backup). Such sales are never re-labelled as a real
+ * method, so the summary reports them honestly instead of inventing details.
+ */
+export type SalePaymentMethod = PaymentMethod | "Unknown";
+
+export const SALE_PAYMENT_METHODS: SalePaymentMethod[] = [
+  ...PAYMENT_METHODS,
+  "Unknown",
+];
+
+/** Human-readable label for a recorded payment method. */
+export function paymentMethodLabel(method: SalePaymentMethod): string {
+  return method === "Unknown" ? "Not recorded" : method;
+}
+
 export type StockReason =
   | "Stock received"
   | "Sale"
@@ -154,7 +173,7 @@ export interface Sale {
   total: number;
   amountPaid: number;
   change: number;
-  paymentMethod: PaymentMethod;
+  paymentMethod: SalePaymentMethod;
   customer: { name: string; phone: string };
   createdAt: string;
 }

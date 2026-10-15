@@ -114,6 +114,12 @@ sale object, so the printed figure always equals the recorded figure.
    double-log ledger entries in development.
 5. **Editing a product's stock now records a stock-ledger entry**, so the
    inventory history stays consistent with the product form.
+6. **Payment summary data layer** — every completed sale stores its timestamp,
+   total and payment method; `paymentSummary` (`src/lib/analytics.ts`) computes
+   today's totals per method plus the combined total and transaction count, with
+   sales de-duplicated by `id`. Legacy sales that never captured a payment method
+   are shown as *Not recorded* (`SalePaymentMethod = "Unknown"`) rather than being
+   counted as Cash, so the books never invent payment details.
 
 ## How to verify
 
@@ -121,6 +127,7 @@ sale object, so the printed figure always equals the recorded figure.
 npm run typecheck   # tsc -b
 npm run lint        # oxlint (3 pre-existing purity warnings)
 npm run build       # tsc -b && vite build && generate sw.js
+npm run verify:payments   # today's payment-summary calculations
 npm run dev         # http://localhost:5173
 ```
 
@@ -128,5 +135,7 @@ Sign in as `admin` to exercise catalog/stock/team flows; sign in as `staff` to
 confirm restricted routes show "Access denied" and that management controls are
 hidden. Pure data-handling checks live in the workflow/permission unit tests used
 during development (cart maths, stock validation, summary consistency, role
-matrix). The offline/PWA behavior is verified end-to-end against a production
-build — see the checklist in [OFFLINE_PWA.md](./OFFLINE_PWA.md#verified-scenarios).
+matrix). The payment-summary calculations are verified by
+`npm run verify:payments`, and the offline/PWA behavior is verified end-to-end
+against a production build — see the checklist in
+[OFFLINE_PWA.md](./OFFLINE_PWA.md#verified-scenarios).

@@ -10,20 +10,18 @@ import {
 import { cn } from "../../lib/cn";
 import { formatCurrency, formatNumber } from "../../lib/format";
 import { paymentSummary } from "../../lib/analytics";
-import type { PaymentMethod, Sale } from "../../types";
+import { paymentMethodLabel, type Sale, type SalePaymentMethod } from "../../types";
 import { SkeletonCard } from "../ui/Skeleton";
 import { StatCard, type StatCardProps } from "../ui/StatCard";
 
 type Tone = NonNullable<StatCardProps["tone"]>;
 
-const methodMeta: Record<
-  PaymentMethod,
-  { label: string; icon: LucideIcon; tone: Tone }
-> = {
-  Cash: { label: "Cash", icon: Banknote, tone: "success" },
-  POS: { label: "POS", icon: CreditCard, tone: "primary" },
-  "Bank Transfer": { label: "Bank Transfer", icon: Landmark, tone: "info" },
-  Other: { label: "Other", icon: Wallet, tone: "accent" },
+const methodMeta: Record<SalePaymentMethod, { icon: LucideIcon; tone: Tone }> = {
+  Cash: { icon: Banknote, tone: "success" },
+  POS: { icon: CreditCard, tone: "primary" },
+  "Bank Transfer": { icon: Landmark, tone: "info" },
+  Other: { icon: Wallet, tone: "accent" },
+  Unknown: { icon: Wallet, tone: "accent" },
 };
 
 export interface PaymentSummaryCardsProps {
@@ -65,7 +63,7 @@ export function PaymentSummaryCards({
         return (
           <StatCard
             key={row.method}
-            label={`${meta.label} payments`}
+            label={`${paymentMethodLabel(row.method)} payments`}
             value={formatCurrency(row.total, currency)}
             icon={meta.icon}
             tone={meta.tone}

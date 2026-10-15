@@ -158,6 +158,7 @@ possible proof of offline operation:
 ```bash
 npm run build
 npm run verify:offline      # needs `chromium` on PATH; override with CHROME=/path/to/chrome
+npm run verify:payments     # today's sales payment-summary calculations (no browser needed)
 ```
 
 It exits non-zero if any check fails. The same steps can be done by hand:

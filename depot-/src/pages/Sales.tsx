@@ -23,16 +23,24 @@ import {
   sumRevenue,
 } from "../lib/analytics";
 import { formatCurrency, formatDateTime, formatNumber } from "../lib/format";
-import type { PaymentMethod, Sale } from "../types";
-import { PAYMENT_METHODS } from "../types";
+import type { Sale } from "../types";
+import {
+  PAYMENT_METHODS,
+  paymentMethodLabel,
+  type SalePaymentMethod,
+} from "../types";
 
 type Preset = "today" | "7d" | "30d" | "all" | "custom";
 
-const methodTone: Record<PaymentMethod, "success" | "info" | "primary" | "neutral"> = {
+const methodTone: Record<
+  SalePaymentMethod,
+  "success" | "info" | "primary" | "neutral"
+> = {
   Cash: "success",
   "Bank Transfer": "info",
   POS: "primary",
   Other: "neutral",
+  Unknown: "neutral",
 };
 
 function toInputDate(date: Date): string {
@@ -178,6 +186,7 @@ export default function Sales() {
                 {entry}
               </option>
             ))}
+            <option value="Unknown">Not recorded</option>
           </Select>
           {preset === "custom" && (
             <div className="flex items-center gap-2">
@@ -232,7 +241,7 @@ export default function Sales() {
                   </TD>
                   <TD>
                     <Badge tone={methodTone[sale.paymentMethod]}>
-                      {sale.paymentMethod}
+                      {paymentMethodLabel(sale.paymentMethod)}
                     </Badge>
                   </TD>
                   <TD className="text-right font-bold">

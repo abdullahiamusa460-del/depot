@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from "react";
 import { ReceiptText } from "lucide-react";
 import { formatCurrency, formatNumber, formatTime } from "../../lib/format";
-import type { PaymentMethod, Sale } from "../../types";
+import { paymentMethodLabel, type Sale, type SalePaymentMethod } from "../../types";
 import { Badge } from "../ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
@@ -10,11 +10,12 @@ import { Skeleton } from "../ui/Skeleton";
 
 type BadgeTone = "neutral" | "primary" | "success" | "warning" | "danger" | "info" | "accent";
 
-const methodTone: Record<PaymentMethod, BadgeTone> = {
+const methodTone: Record<SalePaymentMethod, BadgeTone> = {
   Cash: "success",
   "Bank Transfer": "info",
   POS: "primary",
   Other: "accent",
+  Unknown: "neutral",
 };
 
 export interface PaymentBreakdownListProps {
@@ -114,7 +115,7 @@ export function PaymentBreakdownList({
                       {sale.invoiceNo}
                     </span>
                     <Badge tone={methodTone[sale.paymentMethod]} className="shrink-0">
-                      {sale.paymentMethod}
+                      {paymentMethodLabel(sale.paymentMethod)}
                     </Badge>
                   </div>
                   <span className="mt-0.5 block truncate text-xs text-muted-foreground">

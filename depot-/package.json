@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "lint": "oxlint",
-    "verify:offline": "node scripts/verify-offline.mjs"
+    "verify:offline": "node scripts/verify-offline.mjs",
+    "verify:payments": "node scripts/verify-payment-summary.mjs"
   },
   "dependencies": {
     "lucide-react": "1.52.0",

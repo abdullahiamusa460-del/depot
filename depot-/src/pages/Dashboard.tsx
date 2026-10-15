@@ -41,12 +41,14 @@ import {
 } from "../lib/analytics";
 import { formatCurrency, formatNumber, percent } from "../lib/format";
 import { timeAgo } from "../lib/timeAgo";
+import { paymentMethodLabel } from "../types";
 
 const paymentColors: Record<string, string> = {
   Cash: "var(--success)",
   "Bank Transfer": "var(--info)",
   POS: "var(--primary)",
   Other: "var(--accent)",
+  Unknown: "var(--muted-foreground)",
 };
 
 export default function Dashboard() {
@@ -297,7 +299,7 @@ export default function Dashboard() {
                       className="h-2.5 w-2.5 rounded-full"
                       style={{ background: paymentColors[entry.label] }}
                     />
-                    {entry.label}
+                    {paymentMethodLabel(entry.label)}
                   </span>
                   <span className="font-semibold text-foreground">
                     {percent(entry.value, paymentTotal)}%
@@ -437,7 +439,7 @@ export default function Dashboard() {
                       {sale.invoiceNo}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      {timeAgo(sale.createdAt)} · {sale.paymentMethod}
+                      {timeAgo(sale.createdAt)} · {paymentMethodLabel(sale.paymentMethod)}
                     </span>
                   </span>
                   <span className="shrink-0 text-sm font-bold text-foreground">

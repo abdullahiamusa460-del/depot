@@ -30,6 +30,7 @@ import {
   sumUnits,
 } from "../lib/analytics";
 import { formatCurrency, formatNumber, percent } from "../lib/format";
+import { paymentMethodLabel } from "../types";
 
 type Preset = "today" | "7d" | "30d" | "90d" | "custom";
 
@@ -38,6 +39,7 @@ const paymentColors: Record<string, string> = {
   "Bank Transfer": "var(--info)",
   POS: "var(--primary)",
   Other: "var(--accent)",
+  Unknown: "var(--muted-foreground)",
 };
 
 const categoryColors = [
@@ -226,7 +228,7 @@ export default function Reports() {
           <CardContent>
             <DonutChart
               segments={payments.map((entry) => ({
-                label: entry.label,
+                label: paymentMethodLabel(entry.label),
                 value: entry.value,
                 color: paymentColors[entry.label] ?? "var(--primary)",
               }))}
@@ -241,7 +243,7 @@ export default function Reports() {
                       className="h-2.5 w-2.5 rounded-full"
                       style={{ background: paymentColors[entry.label] }}
                     />
-                    {entry.label}
+                    {paymentMethodLabel(entry.label)}
                   </span>
                   <span className="font-semibold text-foreground">
                     {formatCurrency(entry.value, currency, { compact: true })}

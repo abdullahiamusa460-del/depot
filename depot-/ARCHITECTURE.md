@@ -102,7 +102,37 @@ level, not just in the UI:
 - **First-run seeding** runs once inside a transaction guarded by the `meta`
   `seeded` flag, so two tabs opening together cannot double-seed.
 
-## 5. Authentication & permissions
+## 5. Today's sales payment summary
+
+The dashboard's *Today's sales payment summary* is a pure view over the sales
+already stored on the device — there is no separate running counter to keep in
+sync, so it can never drift from the receipts.
+
+- **Every completed sale records** its `createdAt` (local, ISO timestamp), its
+  `total`, and its payment `method` (`Cash`, `POS`, `Bank Transfer`, `Other`).
+  `api.sales.create` runs atomically with the stock decrement, so only *completed*
+  sales are stored: an incomplete cart is never written, and the sales workflow
+  has no cancelled/void state, so there is nothing else to exclude.
+- **Today** is selected with the application's local-date rules
+  (`startOfDay`/`endOfDay` + `filterSales` in `src/lib/analytics.ts`) and money is
+  rendered with the configured currency symbol (`formatCurrency`, `en-NG`).
+- **`paymentSummary`** (`src/lib/analytics.ts`) returns a per-method total and
+  transaction count, the combined total, the overall transaction count and the
+  average. The three core methods are always shown (even at zero); any other
+  method that actually took money is appended so no takings are hidden. Sales are
+  **de-duplicated by `id`**, so a completed sale can only ever be counted once.
+- **Legacy sales without a payment method** are surfaced as
+  `SalePaymentMethod = "Unknown"` (displayed as *Not recorded*) instead of being
+  assumed to be Cash: `toSalePaymentMethod` in `src/lib/adapters.ts` maps any
+  unrecognised or missing value to `"Unknown"`, and `paymentSummary` gives it its
+  own row that is still included in the combined total. Stored records are never
+  rewritten, so no payment detail is invented.
+- **Immediate + persistent**: `checkout` prepends the new sale to store state
+  (instant UI update) while the receipt has already been committed to IndexedDB,
+  so the summary is identical after closing and reopening the app — with no
+  network connection.
+
+## 6. Authentication & permissions
 
 - Authentication is real but entirely local: passwords are salted and hashed
   (SHA-256 via `crypto.subtle`, with a plain-JS fallback on insecure origins);
@@ -114,7 +144,7 @@ level, not just in the UI:
   permission server-side-equivalent, so the UI is not the only guard. This
   behaviour is unchanged by the offline work.
 
-## 6. Backup & restore
+## 7. Backup & restore
 
 Backups are a client-side JSON download and upload — no network involved.
 
@@ -138,7 +168,7 @@ Backups are a client-side JSON download and upload — no network involved.
 Backup is the only way to recover from cleared browser storage, so it should be
 run regularly and the file kept off-device.
 
-## 7. Verified offline behaviour
+## 8. Verified offline behaviour
 
 `npm run verify:offline` drives a real headless Chromium (over the DevTools
 protocol, no extra dependencies) against a production build, then **stops the
@@ -169,11 +199,27 @@ Verified on this machine (`npm run build && npm run verify:offline`):
       and sales keep their `INV-000001` / `INV-000002` numbers.
 - [x] No uncaught console errors during the run.
 
+The payment-summary calculations are covered separately by
+`npm run verify:payments` (`scripts/verify-payment-summary.mjs`), which loads the
+real `analytics`/`adapters`/`format` modules through Vite's SSR loader and
+asserts (32 checks):
+
+- [x] **Empty sales**: zero transactions, zero combined total, zero average, the
+      three core methods shown at zero, no *Not recorded* row.
+- [x] **Multiple methods + multiple transactions**: per-method totals and counts,
+      combined total, overall transaction count, average and rounded shares.
+- [x] **Legacy sales without a payment method**: map to `Unknown` / *Not recorded*,
+      are never added to Cash, and are still counted once in the combined total.
+- [x] **Local date boundaries**: `23:59:59.999` yesterday and `00:00:00.000`
+      tomorrow are excluded; the first and last instant of today are included.
+- [x] **De-duplication**: a sale passed three times is counted once.
+- [x] **Currency**: formatted with the naira symbol and two decimals.
+
 Other checks: `npm run typecheck` (tsc) passes and `npm run lint` (oxlint)
 reports only the three pre-existing React *purity* warnings on `Date()` usage in
 view components.
 
-## 8. What is intentionally not here
+## 9. What is intentionally not here
 
 - No cloud sync, no online API, no server requirement for daily operation.
 - No barcode hardware integration (noted in the POS UI).
