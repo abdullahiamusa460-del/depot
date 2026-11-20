@@ -278,6 +278,22 @@
     font-family: inherit;
   }
 
+  /* Keep the text insertion caret visible only inside legitimate editable
+     elements. Non-editable elements (cards, panels, headings, containers)
+     must never show a blinking caret when clicked. Text selection still
+     works everywhere — this only hides the caret visual on non-editable UI. */
+  * {
+    caret-color: transparent;
+  }
+
+  input,
+  textarea,
+  select,
+  [contenteditable="true"],
+  [role="textbox"] {
+    caret-color: auto;
+  }
+
   *:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
